@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -7,15 +7,15 @@ use std::{env, fs};
 
 use rustc_version::VersionMeta;
 use tempdir::TempDir;
-use toml::{value::Table, Value, map::Map};
+use toml::{map::Map, value::Table, Value};
 
-use CompilationMode;
 use cargo::{Root, Rustflags};
 use errors::*;
 use extensions::CommandExt;
 use rustc::{Src, Sysroot, Target};
 use util;
 use xargo::Home;
+use CompilationMode;
 use {cargo, xargo};
 
 fn profile() -> &'static str {
@@ -115,10 +115,15 @@ version = "0.0.0"
         }
 
         // rust-src comes with a lockfile for libstd. Use it.
-        let src_parent = src.path().parent().map(Path::to_path_buf).unwrap_or_else(|| src.path().join(".."));
+        let src_parent = src
+            .path()
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| src.path().join(".."));
         let lockfile = src_parent.join("Cargo.lock");
         let target_lockfile = td.join("Cargo.lock");
-        fs::copy(lockfile, &target_lockfile).chain_err(|| "Cargo.lock file is missing from source dir")?;
+        fs::copy(lockfile, &target_lockfile)
+            .chain_err(|| "Cargo.lock file is missing from source dir")?;
 
         let mut perms = fs::metadata(&target_lockfile)
             .chain_err(|| "Cargo.lock file is missing from target dir")?
@@ -185,7 +190,7 @@ version = "0.0.0"
 
             match cargo_mode {
                 XargoMode::Build => cmd.arg("build"),
-                XargoMode::Check => cmd.arg("check")
+                XargoMode::Check => cmd.arg("check"),
             };
 
             cmd.arg("--release");
@@ -352,7 +357,12 @@ pub fn update(
         &dst,
     )?;
 
-    let bin_src = sysroot.path().join("lib").join("rustlib").join(&meta.host).join("bin");
+    let bin_src = sysroot
+        .path()
+        .join("lib")
+        .join("rustlib")
+        .join(&meta.host)
+        .join("bin");
     // copy the Rust linker if it exists
     if bin_src.exists() {
         let bin_dst = lock.parent().join("bin");
@@ -421,10 +431,7 @@ impl Blueprint {
     /// Add $CRATE to `patch` section, as needed to build libstd.
     fn add_patch(patch: &mut Table, src_path: &Path, crate_: &str) -> Result<()> {
         // Old sysroots have this in `src/tools/$CRATE`, new sysroots in `library/$CRATE`.
-        let paths = [
-            src_path.join(crate_),
-            src_path.join("tools").join(crate_),
-        ];
+        let paths = [src_path.join(crate_), src_path.join("tools").join(crate_)];
         if let Some(path) = paths.iter().find(|p| p.exists()) {
             // add crate to patch section (if not specified)
             fn table_entry<'a>(table: &'a mut Table, key: &str) -> Result<&'a mut Table> {
@@ -479,11 +486,14 @@ impl Blueprint {
                 .as_table()
                 .cloned()
                 .ok_or_else(|| format!("Xargo.toml: `patch` must be a table"))?,
-            None => Table::new()
+            None => Table::new(),
         };
 
         for (k1, v) in patch.iter_mut() {
-            for (k2, v) in v.as_table_mut_or_err(|| format!("patch.{}", k1))?.iter_mut() {
+            for (k2, v) in v
+                .as_table_mut_or_err(|| format!("patch.{}", k1))?
+                .iter_mut()
+            {
                 let krate = v.as_table_mut_or_err(|| format!("patch.{}.{}", k1, k2))?;
 
                 make_path_absolute(krate, base_path, || format!("patch.{}.{}", k1, k2))?;
@@ -525,15 +535,17 @@ impl Blueprint {
 
                 deps
             }
-            (Some(value), None) | (None, Some(value)) => if let Some(table) = value.as_table() {
-                table.clone()
-            } else {
-                Err(format!(
-                    "Xargo.toml: target.{}.dependencies must be \
+            (Some(value), None) | (None, Some(value)) => {
+                if let Some(table) = value.as_table() {
+                    table.clone()
+                } else {
+                    Err(format!(
+                        "Xargo.toml: target.{}.dependencies must be \
                      a table",
-                    target
-                ))?
-            },
+                        target
+                    ))?
+                }
+            }
             (None, None) => {
                 // If no dependencies were listed, we assume `core` and `compiler_builtins` as the
                 // dependencies
@@ -549,13 +561,9 @@ impl Blueprint {
                 // reference compiler-builtins with `version = "*"`,
                 // the corresponding version of compiler_builtins matching the used std
                 // is selected because of the copied `Cargo.lock`-file from std.
-                cb.insert("version".to_owned(),
-                    Value::String("*".to_owned()));
+                cb.insert("version".to_owned(), Value::String("*".to_owned()));
                 cb.insert("stage".to_owned(), Value::Integer(1));
-                t.insert(
-                    "compiler_builtins".to_owned(),
-                    Value::Table(cb),
-                );
+                t.insert("compiler_builtins".to_owned(), Value::Table(cb));
                 t
             }
         };
@@ -577,10 +585,7 @@ impl Blueprint {
                     // No path and no git given.  This might be in the sysroot, but if we don't find it there we assume it comes from crates.io.
                     // Current sysroots call it just "std" (etc), but older sysroots use "libstd" (etc),
                     // so we check both.
-                    let paths = [
-                        src.path().join(&k),
-                        src.path().join(format!("lib{}", k)),
-                    ];
+                    let paths = [src.path().join(&k), src.path().join(format!("lib{}", k))];
                     if let Some(path) = paths.iter().find(|p| p.exists()) {
                         map.insert("path".to_owned(), Value::String(path.display().to_string()));
                     }

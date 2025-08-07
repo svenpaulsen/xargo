@@ -2,19 +2,22 @@
 
 #[macro_use]
 extern crate error_chain;
+extern crate dirs;
 extern crate fs2;
-#[cfg(any(all(target_os = "linux", not(target_env = "musl")), target_os = "macos"))]
+#[cfg(any(
+    all(target_os = "linux", not(target_env = "musl")),
+    target_os = "macos"
+))]
 extern crate libc;
 extern crate rustc_version;
 extern crate serde_json;
 extern crate tempdir;
 extern crate toml;
 extern crate walkdir;
-extern crate dirs;
 
 use std::hash::{Hash, Hasher};
 use std::io::Write;
-use std::path::{Path};
+use std::path::Path;
 use std::process::ExitStatus;
 use std::{env, io, process};
 
@@ -100,9 +103,11 @@ pub fn main_inner(xargo_mode: XargoMode) {
 
             process::exit(1)
         }
-        Ok(Some(status)) => if !status.success() {
-            process::exit(status.code().unwrap_or(1))
-        },
+        Ok(Some(status)) => {
+            if !status.success() {
+                process::exit(status.code().unwrap_or(1))
+            }
+        }
         Ok(None) => {}
     }
 }
@@ -122,7 +127,8 @@ fn run(cargo_mode: XargoMode) -> Result<Option<ExitStatus>> {
             io::stderr(),
             concat!("xargo ", env!("CARGO_PKG_VERSION"), "{}"),
             include_str!(concat!(env!("OUT_DIR"), "/commit-info.txt"))
-        ).ok();
+        )
+        .ok();
 
         return cargo::run(&args, verbose).map(Some);
     }
@@ -136,11 +142,13 @@ fn run(cargo_mode: XargoMode) -> Result<Option<ExitStatus>> {
                 "The XARGO_RUST_SRC env variable must be set and point to the \
                  Rust source directory when working with the 'dev' channel",
             )?,
-            Channel::Nightly => if let Some(src) = rustc::Src::from_env() {
-                src
-            } else {
-                sysroot.src()?
-            },
+            Channel::Nightly => {
+                if let Some(src) = rustc::Src::from_env() {
+                    src
+                } else {
+                    sysroot.src()?
+                }
+            }
             Channel::Stable | Channel::Beta => {
                 eprintln!(
                     "ERROR: the sysroot can't be built for the {:?} channel. \
@@ -199,13 +207,13 @@ fn run(cargo_mode: XargoMode) -> Result<Option<ExitStatus>> {
                     &meta,
                     config.as_ref(),
                     verbose,
-                ).map(Some);
+                )
+                .map(Some);
             } else {
-                return Ok(None)
+                return Ok(None);
             }
         }
     }
 
     cargo::run(&args, verbose).map(Some)
 }
-

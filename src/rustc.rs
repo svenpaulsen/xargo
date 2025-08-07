@@ -5,13 +5,13 @@ use std::process::Command;
 
 pub use rustc_version::version_meta as version;
 
-use serde_json::Value;
 use serde_json;
+use serde_json::Value;
 
+use cargo::Root;
 use errors::*;
 use extensions::CommandExt;
 use {rustc, util};
-use cargo::Root;
 
 fn command() -> Command {
     env::var_os("RUSTC")
@@ -32,10 +32,8 @@ pub fn sysroot(verbose: bool) -> Result<Sysroot> {
     command()
         .args(&["--print", "sysroot"])
         .run_and_get_stdout(verbose)
-        .map(|l| {
-            Sysroot {
-                path: PathBuf::from(l.trim()),
-            }
+        .map(|l| Sysroot {
+            path: PathBuf::from(l.trim()),
         })
 }
 /// Path to Rust source
@@ -74,22 +72,32 @@ impl Sysroot {
     pub fn src(&self) -> Result<Src> {
         let src = self.path().join("lib").join("rustlib").join("src");
 
-        if src.join("rust").join("src").join("libstd").join("Cargo.toml").is_file() {
+        if src
+            .join("rust")
+            .join("src")
+            .join("libstd")
+            .join("Cargo.toml")
+            .is_file()
+        {
             return Ok(Src {
                 path: src.join("rust").join("src"),
             });
         }
 
-        if src.join("rust").join("library").join("std").join("Cargo.toml").is_file() {
+        if src
+            .join("rust")
+            .join("library")
+            .join("std")
+            .join("Cargo.toml")
+            .is_file()
+        {
             return Ok(Src {
                 path: src.join("rust").join("library"),
             });
         }
 
-        Err(
-            "`rust-src` component not found. Run `rustup component add \
-             rust-src`.",
-        )?
+        Err("`rust-src` component not found. Run `rustup component add \
+             rust-src`.")?
     }
 }
 

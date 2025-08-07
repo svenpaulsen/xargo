@@ -1,7 +1,7 @@
+use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::fs;
 
 use toml::Value;
 use walkdir::WalkDir;
@@ -31,15 +31,14 @@ pub fn cp_r(src: &Path, dst: &Path) -> Result<()> {
         })?;
 
         let dst_file = dst.join(relative_path);
-        let metadata = e.metadata().chain_err(|| {
-            format!("Could not retrieve metadata of `{}`", e.path().display())
-        })?;
+        let metadata = e
+            .metadata()
+            .chain_err(|| format!("Could not retrieve metadata of `{}`", e.path().display()))?;
 
         if metadata.is_dir() {
             // ensure the destination directory exists
-            fs::create_dir_all(&dst_file).chain_err(|| {
-                format!("Could not create directory `{}`", dst_file.display())
-            })?;
+            fs::create_dir_all(&dst_file)
+                .chain_err(|| format!("Could not create directory `{}`", dst_file.display()))?;
         } else {
             // else copy the file
             fs::copy(&src_file, &dst_file).chain_err(|| {
@@ -61,8 +60,10 @@ pub fn mkdir(path: &Path) -> Result<()> {
 
 /// Parses `path` as TOML
 pub fn parse(path: &Path) -> Result<Value> {
-    Ok(toml::from_str(&read(path)?)
-        .map_err(|_| format!("{} is not valid TOML", path.display()))?)
+    Ok(
+        toml::from_str(&read(path)?)
+            .map_err(|_| format!("{} is not valid TOML", path.display()))?,
+    )
 }
 
 pub fn read(path: &Path) -> Result<String> {

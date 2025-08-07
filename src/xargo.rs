@@ -1,17 +1,17 @@
+use std::io::{self, Write};
 use std::path::{Display, Path, PathBuf};
 use std::process::ExitStatus;
 use std::{env, mem};
-use std::io::{self, Write};
 
-use toml::Value;
 use rustc_version::VersionMeta;
+use toml::Value;
 
-use CompilationMode;
 use cargo::{Config, Root, Rustflags, Subcommand};
 use cli::Args;
 use errors::*;
 use extensions::CommandExt;
 use flock::{FileLock, Filesystem};
+use CompilationMode;
 use {cargo, util};
 
 pub fn run(
@@ -64,18 +64,14 @@ impl Home {
         let fs = self.path(triple);
 
         fs.open_ro(".sentinel", &format!("{}'s sysroot", triple))
-            .chain_err(|| {
-                format!("couldn't lock {}'s sysroot as read-only", triple)
-            })
+            .chain_err(|| format!("couldn't lock {}'s sysroot as read-only", triple))
     }
 
     pub fn lock_rw(&self, triple: &str) -> Result<FileLock> {
         let fs = self.path(triple);
 
         fs.open_rw(".sentinel", &format!("{}'s sysroot", triple))
-            .chain_err(|| {
-                format!("couldn't lock {}'s sysroot as read-only", triple)
-            })
+            .chain_err(|| format!("couldn't lock {}'s sysroot as read-only", triple))
     }
 }
 
@@ -125,9 +121,11 @@ impl Toml {
 /// content of this 'Xargo.toml'
 pub fn toml(root: &Root) -> Result<(Option<&Path>, Option<Toml>)> {
     if let Some(p) = util::search(root.path(), "Xargo.toml") {
-        Ok((Some(p), util::parse(&p.join("Xargo.toml")).map(|t| Some(Toml { table: t }))?))
-    }
-    else {
+        Ok((
+            Some(p),
+            util::parse(&p.join("Xargo.toml")).map(|t| Some(Toml { table: t }))?,
+        ))
+    } else {
         Ok((None, None))
     }
 }
