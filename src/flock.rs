@@ -112,7 +112,9 @@ impl Filesystem {
                 })?;
             }
             State::Shared => {
-                acquire(msg, &path, &|| f.try_lock_shared(), &|| f.lock_shared())?;
+                acquire(msg, &path, &|| Ok(f.try_lock_shared()?), &|| {
+                    f.lock_shared()
+                })?;
             }
         }
 
@@ -122,7 +124,7 @@ impl Filesystem {
         })
     }
 
-    pub fn display(&self) -> Display {
+    pub fn display(&self) -> Display<'_> {
         self.path.display()
     }
 }

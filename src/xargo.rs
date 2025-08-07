@@ -52,7 +52,7 @@ pub struct Home {
 }
 
 impl Home {
-    pub fn display(&self) -> Display {
+    pub fn display(&self) -> Display<'_> {
         self.path.display()
     }
 

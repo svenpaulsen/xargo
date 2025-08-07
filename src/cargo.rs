@@ -233,7 +233,7 @@ pub struct Toml {
 
 impl Toml {
     /// `profile.release` part of `Cargo.toml`
-    pub fn profile(&self) -> Option<Profile> {
+    pub fn profile(&self) -> Option<Profile<'_>> {
         self.table
             .get("profile")
             .and_then(|t| t.get("release"))
